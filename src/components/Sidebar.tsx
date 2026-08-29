@@ -199,8 +199,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Live Google Sheet</span>
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
-                Wilayah aktif: <span className="text-white font-medium">Lombok (ArrayKom)</span>
+              <p className="text-[10px] text-slate-300 font-medium leading-tight">
+                Lombok
               </p>
             </div>
           )}

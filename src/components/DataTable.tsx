@@ -6,24 +6,45 @@ import {
   ChevronsLeft, 
   ChevronsRight, 
   Eye, 
-  Info,
+  Search,
+  X,
   Building2,
   MapPin,
   Landmark,
   User,
-  GraduationCap
+  GraduationCap,
+  Users,
+  Calendar,
+  Clock,
+  UserCheck
 } from 'lucide-react';
 import { Respondent } from '../types';
 
 interface DataTableProps {
   data: Respondent[];
+  submenuType?: 'kompetensi' | 'surlingjar' | 'observasi';
   onSelectRow?: (respondent: Respondent) => void;
 }
 
-type SortField = 'id' | 'kabupaten' | 'kecamatan' | 'sekolah' | 'nama' | 'jenisKelamin' | 'posisiJabatan' | 'gugus' | 'score';
+type SortField = 
+  | 'id' 
+  | 'kabupaten' 
+  | 'kecamatan' 
+  | 'sekolah' 
+  | 'nama' 
+  | 'namaObserver' 
+  | 'namaGuru' 
+  | 'jumlahMurid' 
+  | 'hariTanggal' 
+  | 'waktu' 
+  | 'jenisKelamin' 
+  | 'posisiJabatan' 
+  | 'gugus' 
+  | 'score';
+
 type SortOrder = 'asc' | 'desc';
 
-export const DataTable: React.FC<DataTableProps> = ({ data, onSelectRow }) => {
+export const DataTable: React.FC<DataTableProps> = ({ data, submenuType = 'kompetensi', onSelectRow }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(20);
   const [sortField, setSortField] = useState<SortField>('id');
@@ -71,28 +92,47 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onSelectRow }) => {
     return sortedData.slice(startIndex, startIndex + pageSize);
   }, [sortedData, safeCurrentPage, pageSize]);
 
+  const isSurlingjar = submenuType === 'surlingjar';
+  const isObservasi = submenuType === 'observasi';
+
+  const renderScoreBadge = (scoreStr: string, numScore: number) => {
+    if (!scoreStr || scoreStr === '-') return <span className="text-slate-400">-</span>;
+    
+    // Determine score style based on score value
+    if (numScore < 50) {
+      return (
+        <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200">
+          {scoreStr}
+        </span>
+      );
+    }
+    if (numScore < 70) {
+      return (
+        <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          {scoreStr}
+        </span>
+      );
+    }
+    return (
+      <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        {scoreStr}
+      </span>
+    );
+  };
+
   return (
-    <div className="bg-white rounded-3xl border border-gray-200/90 shadow-sm overflow-hidden mb-8">
-      {/* Table Top Controls */}
-      <div className="p-4 sm:p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-            <GraduationCap className="w-4 h-4" />
-          </div>
-          <div>
-            <h4 className="text-sm font-bold text-slate-900">
-              Tabel Data Survei Kompetensi Pembelajaran Literasi
-            </h4>
-            <p className="text-xs text-slate-500">
-              Menampilkan {paginatedData.length > 0 ? (safeCurrentPage - 1) * pageSize + 1 : 0} -{' '}
-              {Math.min(safeCurrentPage * pageSize, sortedData.length)} dari {sortedData.length} responden
-            </p>
-          </div>
+    <div className="bg-white border-t border-slate-200 overflow-hidden">
+      {/* Top Controls & Pagination summary */}
+      <div className="p-3 sm:px-6 py-2.5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+        <div className="text-xs text-slate-500 font-medium">
+          Menampilkan <strong className="text-slate-800 font-semibold">{paginatedData.length > 0 ? (safeCurrentPage - 1) * pageSize + 1 : 0}</strong> -{' '}
+          <strong className="text-slate-800 font-semibold">{Math.min(safeCurrentPage * pageSize, sortedData.length)}</strong> dari{' '}
+          <strong className="text-slate-800 font-semibold">{sortedData.length}</strong> total data
         </div>
 
         {/* Page size dropdown */}
         <div className="flex items-center gap-2 self-end sm:self-auto text-xs text-slate-600">
-          <span>Baris per halaman:</span>
+          <span>Baris:</span>
           <select
             id="select-page-size"
             value={pageSize}
@@ -100,7 +140,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onSelectRow }) => {
               setPageSize(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="px-3 py-1.5 font-bold bg-gray-50 border border-gray-200 rounded-lg text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="px-2.5 py-1 font-semibold bg-slate-50 border border-slate-200 rounded text-slate-700 focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
           >
             <option value={10}>10</option>
             <option value={20}>20</option>
@@ -110,198 +150,372 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onSelectRow }) => {
         </div>
       </div>
 
-      {/* Responsive Table Container */}
+      {/* Table Container */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-gray-50 text-gray-600 border-b border-gray-100 font-bold select-none text-[11px] uppercase tracking-wider">
-              {/* 1. Nomor */}
+            <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold select-none text-[11px] uppercase tracking-wider">
+              {/* 1. NO */}
               <th 
                 onClick={() => handleSort('id')}
-                className="py-3.5 px-3.5 text-center cursor-pointer hover:bg-gray-100 transition-colors w-14"
+                className="py-3.5 px-3.5 text-center cursor-pointer hover:bg-slate-100 transition-colors w-14"
               >
                 <div className="flex items-center justify-center gap-1">
-                  <span>No</span>
+                  <span>NO</span>
                   <ArrowUpDown className="w-3 h-3 text-slate-400" />
                 </div>
               </th>
 
-              {/* 2. Kabupaten */}
-              <th 
-                onClick={() => handleSort('kabupaten')}
-                className="py-3.5 px-3 cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  <Landmark className="w-3 h-3 text-indigo-500" />
-                  <span>Kabupaten</span>
-                  <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                </div>
-              </th>
+              {/* OBSERVASI SPECIFIC COLUMNS */}
+              {isObservasi ? (
+                <>
+                  {/* 2. NAMA OBSERVER */}
+                  <th 
+                    onClick={() => handleSort('namaObserver')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>NAMA OBSERVER</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
 
-              {/* 3. Kecamatan */}
-              <th 
-                onClick={() => handleSort('kecamatan')}
-                className="py-3.5 px-3 cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-blue-500" />
-                  <span>Kecamatan</span>
-                  <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                </div>
-              </th>
+                  {/* 3. NAMA GURU */}
+                  <th 
+                    onClick={() => handleSort('namaGuru')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>NAMA GURU</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
 
-              {/* 4. Nama Sekolah (Unit Kerja) */}
-              <th 
-                onClick={() => handleSort('sekolah')}
-                className="py-3.5 px-3 cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  <Building2 className="w-3 h-3 text-emerald-500" />
-                  <span>Nama Sekolah (Unit Kerja)</span>
-                  <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                </div>
-              </th>
+                  {/* 4. SEKOLAH / SATUAN */}
+                  <th 
+                    onClick={() => handleSort('sekolah')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>SEKOLAH / SATUAN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
 
-              {/* 5. Nama Guru */}
-              <th 
-                onClick={() => handleSort('nama')}
-                className="py-3.5 px-3 cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  <User className="w-3 h-3 text-indigo-500" />
-                  <span>Nama Guru</span>
-                  <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                </div>
-              </th>
+                  {/* 5. KECAMATAN */}
+                  <th 
+                    onClick={() => handleSort('kecamatan')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>KECAMATAN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
 
-              {/* 6. Jenis Kelamin */}
-              <th 
-                onClick={() => handleSort('jenisKelamin')}
-                className="py-3.5 px-3 text-center cursor-pointer hover:bg-gray-100 transition-colors w-28"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>Jenis Kelamin</span>
-                  <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                </div>
-              </th>
+                  {/* 6. JUMLAH MURID */}
+                  <th 
+                    onClick={() => handleSort('jumlahMurid')}
+                    className="py-3.5 px-4 text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>JUMLAH MURID</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
 
-              {/* 7. Posisi / Jabatan */}
-              <th 
-                onClick={() => handleSort('posisiJabatan')}
-                className="py-3.5 px-3 cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  <span>Posisi / Jabatan</span>
-                  <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                </div>
-              </th>
+                  {/* 7. HARI / TANGGAL */}
+                  <th 
+                    onClick={() => handleSort('hariTanggal')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>HARI / TANGGAL</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
 
-              {/* 8. Gugus / KKMI */}
-              <th 
-                onClick={() => handleSort('gugus')}
-                className="py-3 px-3 text-center cursor-pointer hover:bg-slate-200/70 transition-colors w-28"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>Gugus / KKMI</span>
-                  <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                </div>
-              </th>
+                  {/* 8. WAKTU */}
+                  <th 
+                    onClick={() => handleSort('waktu')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>WAKTU</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+                </>
+              ) : isSurlingjar ? (
+                /* SURLINGJAR COLUMNS */
+                <>
+                  {/* 2. NAMA RESPONDEN */}
+                  <th 
+                    onClick={() => handleSort('nama')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>NAMA RESPONDEN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
 
-              {/* Action Column */}
-              <th className="py-3 px-3 text-center w-20">
-                <span>Aksi</span>
+                  {/* 3. SEKOLAH / SATUAN */}
+                  <th 
+                    onClick={() => handleSort('sekolah')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>SEKOLAH / SATUAN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* 4. KECAMATAN */}
+                  <th 
+                    onClick={() => handleSort('kecamatan')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>KECAMATAN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* 5. KABUPATEN */}
+                  <th 
+                    onClick={() => handleSort('kabupaten')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>KABUPATEN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* 6. JENIS KELAMIN */}
+                  <th 
+                    onClick={() => handleSort('jenisKelamin')}
+                    className="py-3.5 px-4 text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>JENIS KELAMIN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+                </>
+              ) : (
+                /* KOMPETENSI COLUMNS (Matches image.png exact columns) */
+                <>
+                  {/* 2. NAMA RESPONDEN */}
+                  <th 
+                    onClick={() => handleSort('nama')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>NAMA RESPONDEN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* 3. SEKOLAH / SATUAN */}
+                  <th 
+                    onClick={() => handleSort('sekolah')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>SEKOLAH / SATUAN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* 4. KECAMATAN */}
+                  <th 
+                    onClick={() => handleSort('kecamatan')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>KECAMATAN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* 5. GUGUS */}
+                  <th 
+                    onClick={() => handleSort('gugus')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>GUGUS</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* 6. POSISI / JABATAN */}
+                  <th 
+                    onClick={() => handleSort('posisiJabatan')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>POSISI / JABATAN</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* 7. SKOR */}
+                  <th 
+                    onClick={() => handleSort('score')}
+                    className="py-3.5 px-4 text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>SKOR</span>
+                      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                    </div>
+                  </th>
+                </>
+              )}
+
+              {/* AKSI */}
+              <th className="py-3.5 px-4 text-center w-16">
+                <span>AKSI</span>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 text-slate-700">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-slate-400">
-                  <Info className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                  <p className="font-semibold text-slate-600">Tidak ada data yang sesuai filter</p>
-                  <p className="text-xs text-slate-400 mt-1">Coba ubah kata kunci atau reset filter kabupaten/kecamatan/sekolah.</p>
+                <td colSpan={isObservasi ? 9 : isSurlingjar ? 7 : 8} className="py-12 text-center text-slate-400">
+                  <p className="font-semibold text-slate-600 text-sm">Tidak ada data yang sesuai filter</p>
+                  <p className="text-xs text-slate-400 mt-1">Silakan sesuaikan kata kunci atau reset filter.</p>
                 </td>
               </tr>
             ) : (
               paginatedData.map((item, index) => {
                 const actualIndex = (safeCurrentPage - 1) * pageSize + index + 1;
-                const isFemale = item.jenisKelamin?.toLowerCase().includes('perempuan');
-                const isMale = item.jenisKelamin?.toLowerCase().includes('laki');
 
                 return (
                   <tr
                     key={item.id}
-                    className="hover:bg-blue-50/50 transition-colors group cursor-pointer"
+                    className="hover:bg-sky-50/40 transition-colors group cursor-pointer"
                     onClick={() => onSelectRow && onSelectRow(item)}
                   >
-                    {/* 1. Nomor */}
-                    <td className="py-3 px-3.5 text-center font-bold text-slate-500">
+                    {/* 1. NO */}
+                    <td className="py-3.5 px-3.5 text-center font-medium text-slate-400">
                       {actualIndex}
                     </td>
 
-                    {/* 2. Kolom Kabupaten */}
-                    <td className="py-3 px-3 font-semibold text-slate-800">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[11px] font-medium border border-indigo-100">
-                        {item.kabupaten || 'Lombok Tengah'}
-                      </span>
-                    </td>
+                    {/* OBSERVASI ROW DATA */}
+                    {isObservasi ? (
+                      <>
+                        {/* Nama Observer */}
+                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                          {item.namaObserver || '-'}
+                        </td>
 
-                    {/* 3. Kolom Kecamatan */}
-                    <td className="py-3 px-3 font-semibold text-slate-800">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px]">
-                        {item.kecamatan || 'Tidak Tercantum'}
-                      </span>
-                    </td>
+                        {/* Nama Guru */}
+                        <td className="py-3.5 px-4 font-semibold text-slate-800">
+                          {item.namaGuru || item.nama || '-'}
+                        </td>
 
-                    {/* 4. Kolom Nama Sekolah */}
-                    <td className="py-3 px-3 font-medium text-slate-900">
-                      <div className="flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="line-clamp-1">{item.sekolah || '-'}</span>
-                      </div>
-                    </td>
+                        {/* Sekolah */}
+                        <td className="py-3.5 px-4 text-slate-700">
+                          {item.sekolah || '-'}
+                        </td>
 
-                    {/* 5. Kolom Nama Guru */}
-                    <td className="py-3 px-3 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                      {item.nama || '-'}
-                    </td>
+                        {/* Kecamatan */}
+                        <td className="py-3.5 px-4">
+                          <span className="inline-block px-2.5 py-0.5 rounded bg-blue-50 text-blue-600 font-semibold text-xs border border-blue-100">
+                            {item.kecamatan || 'Tidak Tercantum'}
+                          </span>
+                        </td>
 
-                    {/* 6. Kolom Jenis Kelamin */}
-                    <td className="py-3 px-3 text-center">
-                      <span
-                        className={`
-                          inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border
-                          ${isFemale 
-                            ? 'bg-pink-50 text-pink-700 border-pink-200' 
-                            : isMale 
-                            ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                            : 'bg-slate-100 text-slate-700 border-slate-200'
-                          }
-                        `}
-                      >
-                        {item.jenisKelamin || '-'}
-                      </span>
-                    </td>
+                        {/* Jumlah Murid */}
+                        <td className="py-3.5 px-4 text-center font-bold text-emerald-700">
+                          {item.jumlahMurid || '-'}
+                        </td>
 
-                    {/* 6. Kolom Posisi / Jabatan */}
-                    <td className="py-3 px-3 text-slate-700 font-medium">
-                      <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium text-[11px] border border-indigo-100">
-                        {item.posisiJabatan || '-'}
-                      </span>
-                    </td>
+                        {/* Hari / Tanggal */}
+                        <td className="py-3.5 px-4 text-slate-600">
+                          {item.hariTanggal || '-'}
+                        </td>
 
-                    {/* 7. Kolom Gugus / KKMI */}
-                    <td className="py-3 px-3 text-center text-slate-600 font-medium">
-                      <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 text-[11px] border border-amber-200">
-                        {item.gugus || '-'}
-                      </span>
-                    </td>
+                        {/* Waktu */}
+                        <td className="py-3.5 px-4 text-slate-600">
+                          {item.waktu || '-'}
+                        </td>
+                      </>
+                    ) : isSurlingjar ? (
+                      /* SURLINGJAR ROW DATA */
+                      <>
+                        {/* Nama Responden */}
+                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                          {item.nama || '-'}
+                        </td>
 
-                    {/* Detail Action */}
-                    <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        {/* Sekolah */}
+                        <td className="py-3.5 px-4 text-slate-700">
+                          {item.sekolah || '-'}
+                        </td>
+
+                        {/* Kecamatan */}
+                        <td className="py-3.5 px-4">
+                          <span className="inline-block px-2.5 py-0.5 rounded bg-blue-50 text-blue-600 font-semibold text-xs border border-blue-100">
+                            {item.kecamatan || 'Tidak Tercantum'}
+                          </span>
+                        </td>
+
+                        {/* Kabupaten */}
+                        <td className="py-3.5 px-4 text-slate-700 font-medium">
+                          {item.kabupaten || 'Lombok Tengah'}
+                        </td>
+
+                        {/* Jenis Kelamin */}
+                        <td className="py-3.5 px-4 text-center text-slate-600">
+                          {item.jenisKelamin || '-'}
+                        </td>
+                      </>
+                    ) : (
+                      /* KOMPETENSI ROW DATA (Exact matching image.png) */
+                      <>
+                        {/* 2. NAMA RESPONDEN */}
+                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                          {item.nama || '-'}
+                        </td>
+
+                        {/* 3. SEKOLAH / SATUAN */}
+                        <td className="py-3.5 px-4 text-slate-700 font-medium">
+                          {item.sekolah || '-'}
+                        </td>
+
+                        {/* 4. KECAMATAN */}
+                        <td className="py-3.5 px-4">
+                          <span className="inline-block px-2.5 py-0.5 rounded bg-blue-50 text-blue-600 font-semibold text-xs border border-blue-100">
+                            {item.kecamatan || 'Tidak Tercantum'}
+                          </span>
+                        </td>
+
+                        {/* 5. GUGUS */}
+                        <td className="py-3.5 px-4 text-slate-600">
+                          {item.gugus || '-'}
+                        </td>
+
+                        {/* 6. POSISI / JABATAN */}
+                        <td className="py-3.5 px-4 text-slate-700">
+                          {item.posisiJabatan || '-'}
+                        </td>
+
+                        {/* 7. SKOR */}
+                        <td className="py-3.5 px-4 text-center">
+                          {renderScoreBadge(item.score, item.numericScore)}
+                        </td>
+                      </>
+                    )}
+
+                    {/* AKSI */}
+                    <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => onSelectRow && onSelectRow(item)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="w-7 h-7 inline-flex items-center justify-center rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
                         title="Lihat Detail Responden"
                       >
                         <Eye className="w-4 h-4" />
@@ -316,17 +530,17 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onSelectRow }) => {
       </div>
 
       {/* Pagination Footer */}
-      <div className="p-4 sm:p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
+      <div className="p-3 sm:px-6 py-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
         <div className="text-xs text-slate-500 font-medium">
-          Halaman <strong className="text-slate-800 font-bold">{safeCurrentPage}</strong> dari{' '}
-          <strong className="text-slate-800 font-bold">{totalPages}</strong> ({sortedData.length} total responden)
+          Halaman <strong className="text-slate-800 font-semibold">{safeCurrentPage}</strong> dari{' '}
+          <strong className="text-slate-800 font-semibold">{totalPages}</strong>
         </div>
 
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setCurrentPage(1)}
             disabled={safeCurrentPage === 1}
-            className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-200 text-slate-600 hover:bg-gray-100 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+            className="w-8 h-8 rounded bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all text-xs"
             title="Halaman Pertama"
           >
             <ChevronsLeft className="w-4 h-4" />
@@ -334,15 +548,15 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onSelectRow }) => {
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={safeCurrentPage === 1}
-            className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-200 text-slate-600 hover:bg-gray-100 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+            className="w-8 h-8 rounded bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all text-xs"
             title="Halaman Sebelumnya"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          {/* Quick Page Jump indicators */}
+          {/* Current Page */}
           <div className="flex items-center gap-1 px-1">
-            <span className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+            <span className="w-8 h-8 rounded bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
               {safeCurrentPage}
             </span>
           </div>
@@ -350,7 +564,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onSelectRow }) => {
           <button
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={safeCurrentPage === totalPages}
-            className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-200 text-slate-600 hover:bg-gray-100 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+            className="w-8 h-8 rounded bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all text-xs"
             title="Halaman Selanjutnya"
           >
             <ChevronRight className="w-4 h-4" />
@@ -358,7 +572,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onSelectRow }) => {
           <button
             onClick={() => setCurrentPage(totalPages)}
             disabled={safeCurrentPage === totalPages}
-            className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-200 text-slate-600 hover:bg-gray-100 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+            className="w-8 h-8 rounded bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all text-xs"
             title="Halaman Terakhir"
           >
             <ChevronsRight className="w-4 h-4" />

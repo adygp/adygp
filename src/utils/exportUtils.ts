@@ -3,48 +3,116 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Respondent, FilterState } from '../types';
 
-export function exportToExcel(data: Respondent[], filenamePrefix: string = 'Data_Survei_Kompetensi_Literasi_Lombok'): void {
-  // Map to clean tabular format conforming to user requirements
-  const excelRows = data.map((item, index) => ({
-    'No': index + 1,
-    'Kabupaten': item.kabupaten || 'Lombok Tengah',
-    'Kecamatan': item.kecamatan,
-    'Nama Sekolah (Unit Kerja)': item.sekolah,
-    'Nama Guru': item.nama,
-    'Jenis Kelamin': item.jenisKelamin,
-    'Posisi / Jabatan': item.posisiJabatan,
-    'Gugus / KKMI': item.gugus,
-    'Skor Literasi': item.score
-  }));
+export function exportToExcel(
+  data: Respondent[], 
+  filenamePrefix: string = 'Data_Export',
+  submenuType: 'kompetensi' | 'surlingjar' | 'observasi' = 'kompetensi'
+): void {
+  let excelRows: Record<string, any>[] = [];
+  let colWidths: { wch: number }[] = [];
+  let sheetName = 'Data Export';
+
+  if (submenuType === 'observasi') {
+    sheetName = 'Observasi Pembelajaran';
+    excelRows = data.map((item, index) => ({
+      'No': index + 1,
+      'Kabupaten': item.kabupaten || 'Lombok Tengah',
+      'Kecamatan': item.kecamatan || '-',
+      'Nama Sekolah / Madrasah': item.sekolah || '-',
+      'Nama Observer': item.namaObserver || '-',
+      'Nama Guru': item.namaGuru || item.nama || '-',
+      'Jumlah Murid': item.jumlahMurid || '-',
+      'Hari & Tanggal': item.hariTanggal || '-',
+      'Waktu / Durasi': item.waktu || '-'
+    }));
+
+    colWidths = [
+      { wch: 6 },  // No
+      { wch: 18 }, // Kabupaten
+      { wch: 18 }, // Kecamatan
+      { wch: 32 }, // Nama Sekolah / Madrasah
+      { wch: 28 }, // Nama Observer
+      { wch: 28 }, // Nama Guru
+      { wch: 15 }, // Jumlah Murid
+      { wch: 22 }, // Hari & Tanggal
+      { wch: 20 }  // Waktu / Durasi
+    ];
+  } else if (submenuType === 'surlingjar') {
+    sheetName = 'Surlingjar';
+    excelRows = data.map((item, index) => ({
+      'No': index + 1,
+      'Kabupaten': item.kabupaten || 'Lombok Tengah',
+      'Kecamatan': item.kecamatan || '-',
+      'Nama Sekolah/Madrasah': item.sekolah || '-',
+      'Nama Guru': item.nama || '-',
+      'Jenis Kelamin': item.jenisKelamin || '-'
+    }));
+
+    colWidths = [
+      { wch: 6 },  // No
+      { wch: 18 }, // Kabupaten
+      { wch: 18 }, // Kecamatan
+      { wch: 36 }, // Nama Sekolah/Madrasah
+      { wch: 30 }, // Nama Guru
+      { wch: 16 }  // Jenis Kelamin
+    ];
+  } else {
+    sheetName = 'Survei Kompetensi Literasi';
+    excelRows = data.map((item, index) => ({
+      'No': index + 1,
+      'Kabupaten': item.kabupaten || 'Lombok Tengah',
+      'Kecamatan': item.kecamatan || '-',
+      'Nama Sekolah (Unit Kerja)': item.sekolah || '-',
+      'Nama Guru': item.nama || '-',
+      'Jenis Kelamin': item.jenisKelamin || '-',
+      'Posisi / Jabatan': item.posisiJabatan || '-',
+      'Gugus / KKMI': item.gugus || '-',
+      'Skor Literasi': item.score || '-'
+    }));
+
+    colWidths = [
+      { wch: 6 },  // No
+      { wch: 18 }, // Kabupaten
+      { wch: 18 }, // Kecamatan
+      { wch: 32 }, // Nama Sekolah
+      { wch: 28 }, // Nama Guru
+      { wch: 15 }, // Jenis Kelamin
+      { wch: 22 }, // Posisi / Jabatan
+      { wch: 16 }, // Gugus / KKMI
+      { wch: 14 }  // Skor Literasi
+    ];
+  }
 
   const worksheet = XLSX.utils.json_to_sheet(excelRows);
-
-  // Set column widths for clean readability
-  worksheet['!cols'] = [
-    { wch: 6 },  // No
-    { wch: 18 }, // Kabupaten
-    { wch: 18 }, // Kecamatan
-    { wch: 32 }, // Nama Sekolah
-    { wch: 28 }, // Nama Guru
-    { wch: 15 }, // Jenis Kelamin
-    { wch: 22 }, // Posisi / Jabatan
-    { wch: 16 }, // Gugus / KKMI
-    { wch: 14 }  // Skor Literasi
-  ];
+  worksheet['!cols'] = colWidths;
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Survei Kompetensi Literasi');
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
   const timestamp = new Date().toISOString().slice(0, 10);
   XLSX.writeFile(workbook, `${filenamePrefix}_${timestamp}.xlsx`);
 }
 
-export function exportToPDF(data: Respondent[], filters: FilterState, filenamePrefix: string = 'Laporan_Survei_Kompetensi_Literasi_Lombok'): void {
+export function exportToPDF(
+  data: Respondent[], 
+  filters: FilterState, 
+  filenamePrefix: string = 'Laporan_Export',
+  submenuType: 'kompetensi' | 'surlingjar' | 'observasi' = 'kompetensi'
+): void {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
     format: 'a4'
   });
+
+  const isObservasi = submenuType === 'observasi';
+  const isSurlingjar = submenuType === 'surlingjar';
+
+  const subTitle = isObservasi
+    ? 'Lombok - Submenu: Observasi Pembelajaran Literasi (Sheet ArrayObser)'
+    : isSurlingjar
+    ? 'Lombok - Submenu: Surlingjar (Sheet ArraySurling)'
+    : 'Lombok - Submenu: Survei Kompetensi Pembelajaran Literasi (Sheet ArrayKom)';
 
   // Primary Header Brand & Background
   doc.setFillColor(30, 64, 175); // Royal Blue
@@ -57,7 +125,7 @@ export function exportToPDF(data: Respondent[], filters: FilterState, filenamePr
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Lombok - Submenu: Survei Kompetensi Pembelajaran Literasi (Sheet ArrayKom)', 14, 18);
+  doc.text(subTitle, 14, 18);
 
   // Meta Info / Filter Summary
   doc.setTextColor(51, 65, 85);
@@ -73,7 +141,7 @@ export function exportToPDF(data: Respondent[], filters: FilterState, filenamePr
   });
 
   doc.text(`Waktu Cetak: ${printDate}`, 215, 30);
-  doc.text(`Total Baris Data: ${data.length} Responden`, 14, 30);
+  doc.text(`Total Baris Data: ${data.length} ${isObservasi ? 'Sesi Observasi' : 'Responden'}`, 14, 30);
 
   let filterDesc = 'Semua Data';
   const activeFilters = [];
@@ -89,32 +157,116 @@ export function exportToPDF(data: Respondent[], filters: FilterState, filenamePr
   }
   doc.text(`Filter Aktif: ${filterDesc}`, 14, 35);
 
-  // Build table data
-  const tableHead = [
-    [
-      'No',
-      'Kabupaten',
-      'Kecamatan',
-      'Nama Sekolah (Unit Kerja)',
-      'Nama Guru',
-      'Jenis Kelamin',
-      'Posisi / Jabatan',
-      'Gugus / KKMI',
-      'Skor'
-    ]
-  ];
+  let tableHead: string[][] = [];
+  let tableBody: string[][] = [];
+  let columnStyles: Record<number, any> = {};
 
-  const tableBody = data.map((item, index) => [
-    (index + 1).toString(),
-    item.kabupaten || 'Lombok Tengah',
-    item.kecamatan || '-',
-    item.sekolah || '-',
-    item.nama || '-',
-    item.jenisKelamin || '-',
-    item.posisiJabatan || '-',
-    item.gugus || '-',
-    item.score || '-'
-  ]);
+  if (isObservasi) {
+    tableHead = [
+      [
+        'No',
+        'Kabupaten',
+        'Kecamatan',
+        'Nama Sekolah / Madrasah',
+        'Nama Observer',
+        'Nama Guru',
+        'Jml Murid',
+        'Hari & Tanggal',
+        'Waktu / Durasi'
+      ]
+    ];
+
+    tableBody = data.map((item, index) => [
+      (index + 1).toString(),
+      item.kabupaten || 'Lombok Tengah',
+      item.kecamatan || '-',
+      item.sekolah || '-',
+      item.namaObserver || '-',
+      item.namaGuru || item.nama || '-',
+      item.jumlahMurid ? `${item.jumlahMurid}` : '-',
+      item.hariTanggal || '-',
+      item.waktu || '-'
+    ]);
+
+    columnStyles = {
+      0: { halign: 'center', cellWidth: 10 },
+      1: { cellWidth: 26 },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 48 },
+      4: { cellWidth: 40 },
+      5: { cellWidth: 40 },
+      6: { halign: 'center', cellWidth: 20 },
+      7: { cellWidth: 32 },
+      8: { cellWidth: 25 }
+    };
+  } else if (isSurlingjar) {
+    tableHead = [
+      [
+        'No',
+        'Kabupaten',
+        'Kecamatan',
+        'Nama Sekolah / Madrasah',
+        'Nama Guru',
+        'Jenis Kelamin'
+      ]
+    ];
+
+    tableBody = data.map((item, index) => [
+      (index + 1).toString(),
+      item.kabupaten || 'Lombok Tengah',
+      item.kecamatan || '-',
+      item.sekolah || '-',
+      item.nama || '-',
+      item.jenisKelamin || '-'
+    ]);
+
+    columnStyles = {
+      0: { halign: 'center', cellWidth: 12 },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 38 },
+      3: { cellWidth: 80 },
+      4: { cellWidth: 70 },
+      5: { halign: 'center', cellWidth: 34 }
+    };
+  } else {
+    tableHead = [
+      [
+        'No',
+        'Kabupaten',
+        'Kecamatan',
+        'Nama Sekolah (Unit Kerja)',
+        'Nama Guru',
+        'Jenis Kelamin',
+        'Posisi / Jabatan',
+        'Gugus / KKMI',
+        'Skor'
+      ]
+    ];
+
+    tableBody = data.map((item, index) => [
+      (index + 1).toString(),
+      item.kabupaten || 'Lombok Tengah',
+      item.kecamatan || '-',
+      item.sekolah || '-',
+      item.nama || '-',
+      item.jenisKelamin || '-',
+      item.posisiJabatan || '-',
+      item.gugus || '-',
+      item.score || '-'
+    ]);
+
+    columnStyles = {
+      0: { halign: 'center', cellWidth: 10 },
+      1: { cellWidth: 26 },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 54 },
+      4: { cellWidth: 46 },
+      5: { halign: 'center', cellWidth: 24 },
+      6: { cellWidth: 38 },
+      7: { halign: 'center', cellWidth: 24 },
+      8: { halign: 'center', cellWidth: 19 }
+    };
+  }
 
   autoTable(doc, {
     head: tableHead,
@@ -137,17 +289,7 @@ export function exportToPDF(data: Respondent[], filters: FilterState, filenamePr
     alternateRowStyles: {
       fillColor: [248, 250, 252]
     },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 10 },
-      1: { cellWidth: 26 },
-      2: { cellWidth: 28 },
-      3: { cellWidth: 54 },
-      4: { cellWidth: 46 },
-      5: { halign: 'center', cellWidth: 24 },
-      6: { cellWidth: 38 },
-      7: { halign: 'center', cellWidth: 24 },
-      8: { halign: 'center', cellWidth: 19 }
-    },
+    columnStyles,
     margin: { top: 40, left: 14, right: 14, bottom: 14 },
     didDrawPage: (data) => {
       // Footer page number
@@ -165,3 +307,4 @@ export function exportToPDF(data: Respondent[], filters: FilterState, filenamePr
   const timestamp = new Date().toISOString().slice(0, 10);
   doc.save(`${filenamePrefix}_${timestamp}.pdf`);
 }
+

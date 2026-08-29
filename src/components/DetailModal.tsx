@@ -1,17 +1,26 @@
 import React from 'react';
-import { X, User, MapPin, School, Award, Briefcase, Hash, CheckCircle2, BookOpen } from 'lucide-react';
+import { X, User, MapPin, School, Award, Briefcase, Hash, BookOpen, Users, Calendar, Clock, UserCheck } from 'lucide-react';
 import { Respondent } from '../types';
 
 interface DetailModalProps {
   respondent: Respondent | null;
+  submenuType?: 'kompetensi' | 'surlingjar' | 'observasi';
   onClose: () => void;
 }
 
-export const DetailModal: React.FC<DetailModalProps> = ({ respondent, onClose }) => {
+export const DetailModal: React.FC<DetailModalProps> = ({ respondent, submenuType = 'kompetensi', onClose }) => {
   if (!respondent) return null;
 
+  const isSurlingjar = submenuType === 'surlingjar';
+  const isObservasi = submenuType === 'observasi';
   const isFemale = respondent.jenisKelamin?.toLowerCase().includes('perempuan');
   const isMale = respondent.jenisKelamin?.toLowerCase().includes('laki');
+
+  const titleHeader = isObservasi
+    ? 'Detail Observasi Pembelajaran Literasi'
+    : isSurlingjar 
+    ? 'Detail Responden Surlingjar' 
+    : 'Detail Responden Asesmen Literasi';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -23,14 +32,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({ respondent, onClose })
         <div className="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-white/20 text-white">
-              <User className="w-6 h-6" />
+              {isObservasi ? <UserCheck className="w-6 h-6" /> : <User className="w-6 h-6" />}
             </div>
             <div>
               <span className="text-xs uppercase tracking-wider text-blue-200 font-bold">
-                Detail Responden Asesmen Literasi
+                {titleHeader}
               </span>
               <h3 className="text-lg font-black text-white leading-tight">
-                {respondent.nama}
+                {isObservasi ? (respondent.namaGuru || respondent.nama) : respondent.nama}
               </h3>
             </div>
           </div>
@@ -53,7 +62,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({ respondent, onClose })
                 <span>Kecamatan & Kabupaten</span>
               </div>
               <p className="font-black text-slate-900 text-sm">
-                {respondent.kecamatan}
+                {respondent.kecamatan || 'Tidak Tercantum'}
               </p>
               <p className="text-xs text-slate-500">{respondent.kabupaten || 'Lombok Tengah'}</p>
             </div>
@@ -62,61 +71,126 @@ export const DetailModal: React.FC<DetailModalProps> = ({ respondent, onClose })
             <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
               <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
                 <School className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Sekolah / Madrasah (Unit Kerja)</span>
+                <span>{isSurlingjar || isObservasi ? 'Nama Sekolah / Madrasah' : 'Sekolah / Madrasah (Unit Kerja)'}</span>
               </div>
               <p className="font-black text-slate-900 text-sm">
-                {respondent.sekolah}
+                {respondent.sekolah || '-'}
               </p>
             </div>
 
-            {/* Posisi / Jabatan */}
-            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
-                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Posisi / Jabatan</span>
-              </div>
-              <p className="font-black text-slate-900 text-sm">
-                {respondent.posisiJabatan}
-              </p>
-            </div>
+            {isObservasi ? (
+              <>
+                {/* Nama Observer */}
+                <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100">
+                  <div className="flex items-center gap-2 text-xs text-blue-700 font-bold mb-1">
+                    <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Nama Observer</span>
+                  </div>
+                  <p className="font-black text-blue-900 text-sm">
+                    {respondent.namaObserver || '-'}
+                  </p>
+                </div>
 
-            {/* Gugus / KKMI */}
-            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
-                <Hash className="w-3.5 h-3.5 text-amber-600" />
-                <span>Gugus / KKMI</span>
-              </div>
-              <p className="font-black text-slate-900 text-sm">
-                {respondent.gugus}
-              </p>
-            </div>
+                {/* Nama Guru */}
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
+                    <User className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Nama Guru yang Diobservasi</span>
+                  </div>
+                  <p className="font-black text-slate-900 text-sm">
+                    {respondent.namaGuru || respondent.nama || '-'}
+                  </p>
+                </div>
 
-            {/* Jenis Kelamin */}
-            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
-                <User className="w-3.5 h-3.5 text-purple-600" />
-                <span>Jenis Kelamin</span>
-              </div>
-              <span
-                className={`
-                  inline-block px-3 py-1 rounded-full text-xs font-bold border mt-0.5
-                  ${isFemale ? 'bg-pink-50 text-pink-700 border-pink-200' : isMale ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-100 text-slate-700'}
-                `}
-              >
-                {respondent.jenisKelamin}
-              </span>
-            </div>
+                {/* Jumlah Murid */}
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
+                    <Users className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Jumlah Murid</span>
+                  </div>
+                  <p className="font-black text-emerald-700 text-sm">
+                    {respondent.jumlahMurid ? `${respondent.jumlahMurid} Siswa` : '-'}
+                  </p>
+                </div>
 
-            {/* Skor Asesmen */}
-            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
-                <Award className="w-3.5 h-3.5 text-amber-500" />
-                <span>Skor Literasi</span>
-              </div>
-              <p className="font-black text-blue-700 text-lg">
-                {respondent.score}
-              </p>
-            </div>
+                {/* Hari / Tanggal */}
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
+                    <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Hari & Tanggal Observasi</span>
+                  </div>
+                  <p className="font-black text-slate-900 text-sm">
+                    {respondent.hariTanggal || '-'}
+                  </p>
+                </div>
+
+                {/* Waktu */}
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
+                    <Clock className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Waktu / Durasi Observasi</span>
+                  </div>
+                  <p className="font-black text-slate-900 text-sm">
+                    {respondent.waktu || '-'}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Jenis Kelamin */}
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
+                    <User className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Jenis Kelamin</span>
+                  </div>
+                  <span
+                    className={`
+                      inline-block px-3 py-1 rounded-full text-xs font-bold border mt-0.5
+                      ${isFemale ? 'bg-pink-50 text-pink-700 border-pink-200' : isMale ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-100 text-slate-700'}
+                    `}
+                  >
+                    {respondent.jenisKelamin || '-'}
+                  </span>
+                </div>
+
+                {!isSurlingjar && (
+                  <>
+                    {/* Posisi / Jabatan */}
+                    <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
+                      <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
+                        <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Posisi / Jabatan</span>
+                      </div>
+                      <p className="font-black text-slate-900 text-sm">
+                        {respondent.posisiJabatan || '-'}
+                      </p>
+                    </div>
+
+                    {/* Gugus / KKMI */}
+                    <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
+                      <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
+                        <Hash className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Gugus / KKMI</span>
+                      </div>
+                      <p className="font-black text-slate-900 text-sm">
+                        {respondent.gugus || '-'}
+                      </p>
+                    </div>
+
+                    {/* Skor Asesmen */}
+                    <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/90">
+                      <div className="flex items-center gap-2 text-xs text-slate-500 font-bold mb-1">
+                        <Award className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Skor Literasi</span>
+                      </div>
+                      <p className="font-black text-blue-700 text-lg">
+                        {respondent.score}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
 
           {/* Raw Responses Preview (if available) */}
@@ -124,11 +198,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({ respondent, onClose })
             <div className="border-t border-gray-200 pt-4">
               <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <BookOpen className="w-4 h-4 text-blue-600" />
-                Tanggapan Instrumen & Asesmen
+                {isObservasi ? 'Hasil Observasi Butir Pembelajaran & Catatan' : 'Tanggapan Instrumen & Asesmen'}
               </h4>
-              <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
                 {Object.entries(respondent.rawAnswers)
-                  .filter(([key]) => !['Score', 'Nama', 'Jenis Kelamin', 'Posisi/Jabatan', 'Sekolah/Madrasah? (Unit Kerja)', 'Gugus/KKMI?', 'Kabupaten', 'Kecamatan'].includes(key))
+                  .filter(([key]) => {
+                    const k = key.trim().toLowerCase();
+                    return !['score', 'nama', 'nama guru', 'namu guru', 'jenis kelamin', 'posisi/jabatan', 'sekolah/madrasah? (unit kerja)', 'gugus/kkmi?', 'kabupaten', 'kecamatan', 'nama observer', 'sd/mi', 'durasi (dari jam berapa sampai jam berapa)', 'hari & tanggal observasi'].includes(k);
+                  })
                   .map(([question, answer], idx) => (
                     <div key={idx} className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs">
                       <p className="font-bold text-slate-800 mb-1 leading-snug">{question}</p>

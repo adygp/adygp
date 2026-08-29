@@ -9,6 +9,11 @@ export interface Respondent {
   gugus: string;
   kabupaten: string;
   kecamatan: string;
+  namaObserver?: string;
+  namaGuru?: string;
+  jumlahMurid?: string;
+  hariTanggal?: string;
+  waktu?: string;
   rawAnswers?: Record<string, string>;
 }
 
@@ -34,6 +39,8 @@ export interface SummaryStats {
   avgScore: number;
   highScore: number;
   lowScore: number;
+  totalObserver?: number;
+  totalMurid?: number;
 }
 
 export interface ChartDataPoint {

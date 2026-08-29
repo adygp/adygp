@@ -1,110 +1,145 @@
 import React from 'react';
-import { Menu, RefreshCw, Database, CheckCircle2, AlertCircle } from 'lucide-react';
+import { 
+  Menu, 
+  RefreshCw, 
+  FileSpreadsheet, 
+  Code2, 
+  GraduationCap
+} from 'lucide-react';
 import { MainMenuKey, LombokSubmenuKey } from '../types';
 
 interface HeaderProps {
   activeMenu: MainMenuKey;
   activeSubmenu: LombokSubmenuKey;
-  onOpenMobileSidebar: () => void;
-  onRefreshData: () => void;
-  isLoading: boolean;
-  lastUpdated: Date | null;
-  totalRecords: number;
-  isUsingFallback: boolean;
+  onSelectMenu: (menu: MainMenuKey) => void;
+  onSelectSubmenu?: (sub: LombokSubmenuKey) => void;
+  onRefreshData?: () => void;
+  onExportExcel?: () => void;
+  onOpenEmbedModal?: () => void;
+  isLoading?: boolean;
+  isUsingFallback?: boolean;
+  lastUpdated?: Date | null;
+  onToggleMobileSidebar?: () => void;
+  totalRecords?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeMenu,
   activeSubmenu,
-  onOpenMobileSidebar,
+  onSelectMenu,
+  onSelectSubmenu,
   onRefreshData,
-  isLoading,
+  onExportExcel,
+  onOpenEmbedModal,
+  isLoading = false,
+  isUsingFallback = false,
   lastUpdated,
-  totalRecords,
-  isUsingFallback
+  onToggleMobileSidebar,
+  totalRecords = 0
 }) => {
-  const getMenuLabel = () => {
+  const getMenuBadge = () => {
     switch (activeMenu) {
-      case 'lombok': return 'Kabupaten Lombok';
-      case 'dompu': return 'Kabupaten Dompu';
-      case 'bima': return 'Kabupaten Bima';
-      case 'numerasi': return 'Program Numerasi';
-      case 'nonprioritas': return 'Wilayah Nonprioritas';
-      default: return activeMenu;
-    }
-  };
-
-  const getSubmenuLabel = () => {
-    if (activeMenu !== 'lombok') return null;
-    switch (activeSubmenu) {
-      case 'kompetensi': return 'Survei Kompetensi Pembelajaran Literasi';
-      case 'surlingjar': return 'Surlingjar';
-      case 'observasi': return 'Observasi Pembelajaran Literasi';
-      default: return activeSubmenu;
+      case 'lombok': return 'LOMBOK';
+      case 'dompu': return 'DOMPU';
+      case 'bima': return 'BIMA';
+      case 'numerasi': return 'NUMERASI';
+      case 'nonprioritas': return 'NONPRIORITAS';
+      default: return 'SIGAP';
     }
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-200/90 shadow-2xs px-3 sm:px-6 py-2 sm:py-2.5">
-      <div className="flex items-center justify-between gap-3">
-        {/* Left: Mobile Toggle & Breadcrumb */}
-        <div className="flex items-center gap-2.5 min-w-0">
+    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
+      <div className="px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-4">
+        {/* Left Section: Mobile Menu + Title & Badges */}
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <button
-            id="btn-open-mobile-sidebar"
-            onClick={onOpenMobileSidebar}
-            className="p-1.5 -ml-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-gray-100 lg:hidden transition-colors cursor-pointer"
+            id="btn-toggle-sidebar-mobile"
+            onClick={onToggleMobileSidebar}
+            className="p-1.5 -ml-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 lg:hidden cursor-pointer shrink-0"
             aria-label="Buka Menu"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 truncate">
-              <span className="text-blue-600 font-extrabold">{getMenuLabel()}</span>
-              {getSubmenuLabel() && (
-                <>
-                  <span className="text-slate-300">/</span>
-                  <span className="text-slate-600 truncate">{getSubmenuLabel()}</span>
-                </>
-              )}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-xs shrink-0">
+              <GraduationCap className="w-4 h-4" />
             </div>
-            <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight truncate">
-              {activeMenu === 'lombok' 
-                ? (activeSubmenu === 'kompetensi' ? 'Survei Kompetensi Pembelajaran Literasi (ArrayKom)' : getSubmenuLabel())
-                : getMenuLabel()
-              }
-            </h2>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h1 className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight truncate">
+                  Baseline Literasi dan Numerasi
+                </h1>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80 shrink-0">
+                  {getMenuBadge()}
+                </span>
+                <span className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  SIGAP
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium truncate hidden xs:block">
+                Sekolah/Madrasah Prioritas • Sistem Informasi & Asesmen Baseline
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Right: Live Sync & Refresh Action */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Status Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs font-semibold text-slate-700">
-            {isUsingFallback ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span className="text-amber-700 text-[11px]">Snapshot Offline ({totalRecords})</span>
-              </>
-            ) : (
-              <>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-emerald-700 text-[11px]">Live Sheet ({totalRecords})</span>
-              </>
-            )}
+        {/* Right Section: Action Buttons */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Live Google Sheets status pill */}
+          <div 
+            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+              isUsingFallback 
+                ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+            }`}
+            title={lastUpdated ? `Pembaruan terakhir: ${lastUpdated.toLocaleTimeString('id-ID')}` : 'Sinkronisasi Aktif'}
+          >
+            <span className={`w-2 h-2 rounded-full ${isUsingFallback ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+            <span>{isUsingFallback ? 'Data Tersimpan' : 'Live Google Sheets'}</span>
           </div>
 
-          {/* Refresh button */}
-          <button
-            id="btn-refresh-spreadsheet-data"
-            onClick={onRefreshData}
-            disabled={isLoading}
-            className="px-2.5 py-1 sm:px-3 sm:py-1.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-xs font-bold rounded-lg border border-gray-300 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-            title="Muat Ulang Data dari Google Spreadsheet"
-          >
-            <RefreshCw className={`w-3 h-3 text-blue-600 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden md:inline text-xs">{isLoading ? 'Memuat...' : 'Segarkan Data'}</span>
-          </button>
+          {/* Sync / Refresh Button */}
+          {onRefreshData && (
+            <button
+              id="btn-refresh-data"
+              onClick={onRefreshData}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold border border-slate-200 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              title="Muat Ulang Data Terbaru dari Google Sheets"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isLoading ? 'Sinkron...' : 'Sinkron Data'}</span>
+            </button>
+          )}
+
+          {/* Export Excel Button */}
+          {onExportExcel && (
+            <button
+              id="btn-export-excel"
+              onClick={onExportExcel}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+              title="Download Seluruh Data ke Excel"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Export Excel</span>
+            </button>
+          )}
+
+          {/* Embed / Google Sites Code Button */}
+          {onOpenEmbedModal && (
+            <button
+              id="btn-embed-modal"
+              onClick={onOpenEmbedModal}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition-all active:scale-95 cursor-pointer"
+              title="Salin Kode Embed untuk Google Sites"
+            >
+              <Code2 className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden md:inline">Embed</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

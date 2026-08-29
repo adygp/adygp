@@ -5,20 +5,28 @@ import {
   Briefcase, 
   ChevronDown,
   ChevronUp,
-  Filter
+  UserCheck,
+  Building2
 } from 'lucide-react';
 import { Respondent, ChartDataPoint } from '../types';
 
 interface ChartsSectionProps {
   data: Respondent[];
+  submenuType?: 'kompetensi' | 'surlingjar' | 'observasi';
   onSelectKecamatanFilter?: (kec: string) => void;
+  onSelectSekolahFilter?: (sekolah: string) => void;
 }
 
 export const ChartsSection: React.FC<ChartsSectionProps> = ({
   data,
-  onSelectKecamatanFilter
+  submenuType = 'kompetensi',
+  onSelectKecamatanFilter,
+  onSelectSekolahFilter
 }) => {
-  const [activeTab, setActiveTab] = useState<'kecamatan' | 'gender' | 'posisi'>('kecamatan');
+  const isSurlingjar = submenuType === 'surlingjar';
+  const isObservasi = submenuType === 'observasi';
+
+  const [activeTab, setActiveTab] = useState<'kecamatan' | 'gender' | 'posisi' | 'sekolah' | 'observer'>('kecamatan');
   const [isCollapsed, setIsCollapsed] = useState<boolean>(true);
 
   // 1. Data per Kecamatan
@@ -38,7 +46,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
 
   const maxKecamatanVal = Math.max(...kecamatanData.map((d) => d.value), 1);
 
-  // 2. Data per Jenis Kelamin
+  // 2. Data per Jenis Kelamin (for Kompetensi & Surlingjar)
   const genderCounts: Record<string, number> = {};
   data.forEach((item) => {
     const g = item.jenisKelamin || 'Lainnya';
@@ -72,7 +80,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
     percentage: data.length > 0 ? (value / data.length) * 100 : 0
   }));
 
-  // 3. Data per Posisi/Jabatan
+  // 3. Data per Posisi/Jabatan (for Kompetensi)
   const posisiCounts: Record<string, number> = {};
   data.forEach((item) => {
     const p = item.posisiJabatan || 'Lainnya';
@@ -89,6 +97,52 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
 
   const maxPosisiVal = Math.max(...posisiData.map((d) => d.value), 1);
 
+  // 4. Data per Sekolah/Madrasah (Top SD/MI)
+  const sekolahCounts: Record<string, number> = {};
+  data.forEach((item) => {
+    const s = item.sekolah || '-';
+    if (s !== '-') {
+      sekolahCounts[s] = (sekolahCounts[s] || 0) + 1;
+    }
+  });
+
+  const sekolahData: ChartDataPoint[] = Object.entries(sekolahCounts)
+    .map(([name, value]) => ({
+      name,
+      value,
+      percentage: data.length > 0 ? (value / data.length) * 100 : 0
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 20);
+
+  const maxSekolahVal = Math.max(...sekolahData.map((d) => d.value), 1);
+
+  // 5. Data per Observer (for Observasi)
+  const observerCounts: Record<string, number> = {};
+  data.forEach((item) => {
+    const obs = item.namaObserver || '-';
+    if (obs !== '-') {
+      observerCounts[obs] = (observerCounts[obs] || 0) + 1;
+    }
+  });
+
+  const observerData: ChartDataPoint[] = Object.entries(observerCounts)
+    .map(([name, value]) => ({
+      name,
+      value,
+      percentage: data.length > 0 ? (value / data.length) * 100 : 0
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 20);
+
+  const maxObserverVal = Math.max(...observerData.map((d) => d.value), 1);
+
+  const chartTitle = isObservasi
+    ? 'Statistik Visual Observasi Pembelajaran'
+    : isSurlingjar 
+    ? 'Statistik Visual Surlingjar' 
+    : 'Statistik Visual Responden';
+
   return (
     <div className={`bg-white rounded-xl border border-slate-200/80 shadow-2xs transition-all mb-2.5 ${isCollapsed ? 'p-2 sm:p-2.5' : 'p-3 sm:p-4'}`}>
       {/* Header with Tab Switcher & Collapse Toggle */}
@@ -102,7 +156,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors">
-              Statistik Visual Responden
+              {chartTitle}
             </span>
             <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.2 rounded font-semibold border border-blue-200/60">
               {data.length} Data
@@ -131,41 +185,121 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
               <span>Kecamatan</span>
             </button>
 
-            <button
-              id="tab-chart-gender"
-              onClick={() => {
-                setActiveTab('gender');
-                setIsCollapsed(false);
-              }}
-              className={`
-                flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer
-                ${activeTab === 'gender' && !isCollapsed
-                  ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-                }
-              `}
-            >
-              <PieIcon className="w-3 h-3" />
-              <span>Gender</span>
-            </button>
+            {isObservasi ? (
+              <>
+                <button
+                  id="tab-chart-observer"
+                  onClick={() => {
+                    setActiveTab('observer');
+                    setIsCollapsed(false);
+                  }}
+                  className={`
+                    flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer
+                    ${activeTab === 'observer' && !isCollapsed
+                      ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                    }
+                  `}
+                >
+                  <UserCheck className="w-3 h-3" />
+                  <span>Observer</span>
+                </button>
 
-            <button
-              id="tab-chart-posisi"
-              onClick={() => {
-                setActiveTab('posisi');
-                setIsCollapsed(false);
-              }}
-              className={`
-                flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer
-                ${activeTab === 'posisi' && !isCollapsed
-                  ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-                }
-              `}
-            >
-              <Briefcase className="w-3 h-3" />
-              <span>Jabatan</span>
-            </button>
+                <button
+                  id="tab-chart-sekolah"
+                  onClick={() => {
+                    setActiveTab('sekolah');
+                    setIsCollapsed(false);
+                  }}
+                  className={`
+                    flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer
+                    ${activeTab === 'sekolah' && !isCollapsed
+                      ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                    }
+                  `}
+                >
+                  <Building2 className="w-3 h-3" />
+                  <span>SD/MI</span>
+                </button>
+              </>
+            ) : isSurlingjar ? (
+              <>
+                <button
+                  id="tab-chart-gender"
+                  onClick={() => {
+                    setActiveTab('gender');
+                    setIsCollapsed(false);
+                  }}
+                  className={`
+                    flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer
+                    ${activeTab === 'gender' && !isCollapsed
+                      ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                    }
+                  `}
+                >
+                  <PieIcon className="w-3 h-3" />
+                  <span>Gender</span>
+                </button>
+
+                <button
+                  id="tab-chart-sekolah"
+                  onClick={() => {
+                    setActiveTab('sekolah');
+                    setIsCollapsed(false);
+                  }}
+                  className={`
+                    flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer
+                    ${activeTab === 'sekolah' && !isCollapsed
+                      ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                    }
+                  `}
+                >
+                  <Briefcase className="w-3 h-3" />
+                  <span>SD/MI</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  id="tab-chart-gender"
+                  onClick={() => {
+                    setActiveTab('gender');
+                    setIsCollapsed(false);
+                  }}
+                  className={`
+                    flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer
+                    ${activeTab === 'gender' && !isCollapsed
+                      ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                    }
+                  `}
+                >
+                  <PieIcon className="w-3 h-3" />
+                  <span>Gender</span>
+                </button>
+
+                <button
+                  id="tab-chart-posisi"
+                  onClick={() => {
+                    setActiveTab('posisi');
+                    setIsCollapsed(false);
+                  }}
+                  className={`
+                    flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer
+                    ${activeTab === 'posisi' && !isCollapsed
+                      ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                    }
+                  `}
+                >
+                  <Briefcase className="w-3 h-3" />
+                  <span>Jabatan</span>
+                </button>
+              </>
+            )}
           </div>
 
           {/* Toggle Sembunyikan / Tampilkan */}
@@ -184,12 +318,12 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
       {/* Chart Body (Collapsible & Ultra-Compact) */}
       {!isCollapsed && (
         <div className="pt-2.5">
-          {/* View 1: Kecamatan (2-Column Grid on Desktop, sleek 6px progress bars) */}
+          {/* View 1: Kecamatan */}
           {activeTab === 'kecamatan' && (
             <div>
               <div className="flex items-center justify-between text-[11px] text-slate-400 mb-2 px-0.5">
                 <span>Klik nama kecamatan untuk memfilter tabel langsung</span>
-                <span className="text-slate-500 font-medium hidden sm:inline">Urutan Responden Tertinggi</span>
+                <span className="text-slate-500 font-medium hidden sm:inline">Urutan Data Tertinggi</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 max-h-44 sm:max-h-48 overflow-y-auto pr-1">
@@ -231,7 +365,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
             </div>
           )}
 
-          {/* View 2: Gender Breakdown (Sleek side-by-side cards) */}
+          {/* View 2: Gender Breakdown */}
           {activeTab === 'gender' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 py-1">
               {genderData.map((item) => {
@@ -268,8 +402,53 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
             </div>
           )}
 
-          {/* View 3: Posisi / Jabatan (2-Column Grid on Desktop, sleek bars) */}
-          {activeTab === 'posisi' && (
+          {/* View 3: Observer Ranking (Observasi) */}
+          {activeTab === 'observer' && isObservasi && (
+            <div>
+              <div className="flex items-center justify-between text-[11px] text-slate-400 mb-2 px-0.5">
+                <span>Daftar observer dengan jumlah aktivitas observasi</span>
+                <span className="text-slate-500 font-medium hidden sm:inline">Top Observer</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 max-h-44 sm:max-h-48 overflow-y-auto pr-1 py-1">
+                {observerData.map((item, index) => {
+                  const widthPct = Math.max((item.value / maxObserverVal) * 100, 3);
+
+                  return (
+                    <div
+                      key={item.name}
+                      className="group p-1.5 sm:p-2 rounded-xl bg-slate-50/70 hover:bg-blue-50/80 border border-slate-100 hover:border-blue-200 transition-all"
+                    >
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center gap-1.5 truncate max-w-[70%]">
+                          <span className="w-4 h-4 rounded text-[10px] font-bold bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                            {index + 1}
+                          </span>
+                          <span className="font-semibold text-slate-800 group-hover:text-blue-700 truncate">
+                            {item.name}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 shrink-0">
+                          <strong className="text-blue-600 font-bold">{item.value}</strong>
+                          <span className="text-slate-400 ml-1">Observasi ({item.percentage?.toFixed(1)}%)</span>
+                        </div>
+                      </div>
+
+                      <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 group-hover:bg-blue-700 rounded-full transition-all duration-300"
+                          style={{ width: `${widthPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* View 4: Posisi / Jabatan (Kompetensi) */}
+          {activeTab === 'posisi' && !isSurlingjar && !isObservasi && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 max-h-44 sm:max-h-48 overflow-y-auto pr-1 py-1">
               {posisiData.map((item, index) => {
                 const widthPct = Math.max((item.value / maxPosisiVal) * 100, 3);
@@ -304,6 +483,53 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* View 5: Top Sekolah / Madrasah (Surlingjar & Observasi) */}
+          {activeTab === 'sekolah' && (isSurlingjar || isObservasi) && (
+            <div>
+              <div className="flex items-center justify-between text-[11px] text-slate-400 mb-2 px-0.5">
+                <span>Klik nama sekolah/madrasah untuk memfilter tabel langsung</span>
+                <span className="text-slate-500 font-medium hidden sm:inline">Top Satuan Pendidikan</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 max-h-44 sm:max-h-48 overflow-y-auto pr-1 py-1">
+                {sekolahData.map((item, index) => {
+                  const widthPct = Math.max((item.value / maxSekolahVal) * 100, 3);
+
+                  return (
+                    <div
+                      key={item.name}
+                      onClick={() => onSelectSekolahFilter && onSelectSekolahFilter(item.name)}
+                      className="group p-1.5 sm:p-2 rounded-xl bg-slate-50/70 hover:bg-emerald-50/80 border border-slate-100 hover:border-emerald-200 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center gap-1.5 truncate max-w-[70%]">
+                          <span className="w-4 h-4 rounded text-[10px] font-bold bg-slate-200/80 text-slate-600 flex items-center justify-center shrink-0">
+                            {index + 1}
+                          </span>
+                          <span className="font-semibold text-slate-800 group-hover:text-emerald-700 truncate">
+                            {item.name}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 shrink-0">
+                          <strong className="text-emerald-600 font-bold">{item.value}</strong>
+                          <span className="text-slate-400 ml-1">({item.percentage?.toFixed(1)}%)</span>
+                        </div>
+                      </div>
+
+                      {/* Ultra-sleek Thin Bar */}
+                      <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-600 group-hover:bg-emerald-700 rounded-full transition-all duration-300"
+                          style={{ width: `${widthPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
