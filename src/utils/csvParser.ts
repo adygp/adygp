@@ -1,8 +1,8 @@
 import Papa from 'papaparse';
 import { Respondent } from '../types';
-import initialDataJson from '../data/initialData.json';
-import initialSurlingjarJson from '../data/initialSurlingjarData.json';
-import initialObservasiJson from '../data/initialObservasiData.json';
+import initialDataJson from '../data/initialData';
+import initialSurlingjarJson from '../data/initialSurlingjarData';
+import initialObservasiJson from '../data/initialObservasiData';
 
 export const GOOGLE_SHEET_ARRAY_KOM_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGGnQtDjDxSG3Sl2xS0JNcysnk6Tguh6qtWqcQzpuSS2cTgfEG7DUe-XleP7ctbdROx6zJEPecmQeT/pub?gid=582620741&single=true&output=csv';

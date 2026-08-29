@@ -7,3 +7,4 @@ Aplikasi dashboard analitik literasi, numerasi, observasi pembelajaran, dan surv
 - Visualisasi grafik interaktif
 - Ekspor PDF, Excel, dan CSV
 - Dukungan Netlify & static deployment
+- Modul data TypeScript teroptimasi

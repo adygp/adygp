@@ -23,9 +23,9 @@ import {
   FilterState, 
   SummaryStats 
 } from './types';
-import initialDataJson from './data/initialData.json';
-import initialSurlingjarDataJson from './data/initialSurlingjarData.json';
-import initialObservasiDataJson from './data/initialObservasiData.json';
+import initialDataJson from './data/initialData';
+import initialSurlingjarDataJson from './data/initialSurlingjarData';
+import initialObservasiDataJson from './data/initialObservasiData';
 
 export default function App() {
   // Navigation & Layout States
